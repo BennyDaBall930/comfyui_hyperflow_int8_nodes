@@ -70,8 +70,8 @@ Use the python of your ComfyUI install for `pip`, then restart ComfyUI.
 
 | Folder in `ComfyUI/models/` | File | Download |
 |---|---|---|
-| `diffusion_models/` | `minimax_h3_fl2va_hyperflow_flash_int8_convrot.safetensors` (15.9 GB) | [BennyDaBall/HyperFlow-H3-Flash_INT8_ComfyUI](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash_INT8_ComfyUI) |
-| `diffusion_models/` | `minimax_h3_ref2va_hyperflow_flash_int8_convrot.safetensors` (16.3 GB) | [BennyDaBall/HyperFlow-H3-Flash_INT8_ComfyUI](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash_INT8_ComfyUI) |
+| `diffusion_models/` | `minimax_h3_fl2va_hyperflow_flash_int8_convrot.safetensors` (15.9 GB) | [BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI) |
+| `diffusion_models/` | `minimax_h3_ref2va_hyperflow_flash_int8_convrot.safetensors` (16.3 GB) | [BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI) |
 | `text_encoders/` | `qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors` | [Comfy-Org/MiniMax-H3](https://huggingface.co/Comfy-Org/MiniMax-H3) |
 | `vae/` | `minimax_h3_video_vae_fp16.safetensors`, `minimax_h3_audio_vae_fp32.safetensors` | [Comfy-Org/MiniMax-H3](https://huggingface.co/Comfy-Org/MiniMax-H3) |
 
@@ -79,7 +79,7 @@ Use the python of your ComfyUI install for `pip`, then restart ComfyUI.
 only need the variant you use.
 
 ```sh
-hf download BennyDaBall/HyperFlow-H3-Flash_INT8_ComfyUI minimax_h3_fl2va_hyperflow_flash_int8_convrot.safetensors \
+hf download BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI minimax_h3_fl2va_hyperflow_flash_int8_convrot.safetensors \
   --local-dir ComfyUI/models/diffusion_models
 ```
 
