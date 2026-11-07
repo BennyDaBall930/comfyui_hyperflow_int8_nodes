@@ -1200,33 +1200,33 @@
       "title": "1. Models: pick your files",
       "bounding": [
         -20,
-        10,
+        -15,
         420,
-        528
+        557
       ],
       "color": "#3f789e",
       "flags": {}
     },
     {
       "id": 2,
-      "title": "2. Reference images, in prompt order",
+      "title": "2. References, in prompt order",
       "bounding": [
         -20,
-        590,
+        565,
         420,
-        830
+        859
       ],
       "color": "#3f789e",
       "flags": {}
     },
     {
       "id": 3,
-      "title": "3. Prompt (<Picture 1>, <Picture 2>, ...), size, length",
+      "title": "3. Prompt (<Picture N> tags), size, length",
       "bounding": [
         450,
-        10,
+        -15,
         520,
-        630
+        659
       ],
       "color": "#3f789e",
       "flags": {}
@@ -1236,9 +1236,9 @@
       "title": "4. Sampling: change seed and steps only",
       "bounding": [
         1030,
-        10,
+        -15,
         720,
-        496
+        525
       ],
       "color": "#3f789e",
       "flags": {}
@@ -1248,9 +1248,9 @@
       "title": "5. Output",
       "bounding": [
         1810,
-        10,
+        -15,
         940,
-        590
+        619
       ],
       "color": "#3f789e",
       "flags": {}

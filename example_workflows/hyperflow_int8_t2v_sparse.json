@@ -1153,9 +1153,9 @@
       "title": "1. Models: pick your files",
       "bounding": [
         -20,
-        10,
+        -15,
         420,
-        528
+        557
       ],
       "color": "#3f789e",
       "flags": {}
@@ -1165,9 +1165,9 @@
       "title": "2. Prompt, size, length",
       "bounding": [
         450,
-        10,
+        -15,
         520,
-        530
+        559
       ],
       "color": "#3f789e",
       "flags": {}
@@ -1177,9 +1177,9 @@
       "title": "3. Sampling: change seed and steps only",
       "bounding": [
         1030,
-        10,
+        -15,
         720,
-        844
+        853
       ],
       "color": "#3f789e",
       "flags": {}
@@ -1189,9 +1189,9 @@
       "title": "4. Output",
       "bounding": [
         1810,
-        10,
+        -15,
         940,
-        590
+        619
       ],
       "color": "#3f789e",
       "flags": {}

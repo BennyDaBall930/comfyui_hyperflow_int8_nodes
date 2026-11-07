@@ -1083,9 +1083,9 @@
       "title": "1. Models: pick your files",
       "bounding": [
         -20,
-        10,
+        -15,
         420,
-        528
+        557
       ],
       "color": "#3f789e",
       "flags": {}
@@ -1095,9 +1095,9 @@
       "title": "2. Keyframes",
       "bounding": [
         -20,
-        590,
+        565,
         420,
-        430
+        459
       ],
       "color": "#3f789e",
       "flags": {}
@@ -1107,9 +1107,9 @@
       "title": "3. Prompt, size, length",
       "bounding": [
         450,
-        10,
+        -15,
         520,
-        530
+        559
       ],
       "color": "#3f789e",
       "flags": {}
@@ -1119,9 +1119,9 @@
       "title": "4. Sampling: change seed and steps only",
       "bounding": [
         1030,
-        10,
+        -15,
         720,
-        496
+        525
       ],
       "color": "#3f789e",
       "flags": {}
@@ -1131,9 +1131,9 @@
       "title": "5. Output",
       "bounding": [
         1810,
-        10,
+        -15,
         940,
-        590
+        619
       ],
       "color": "#3f789e",
       "flags": {}
