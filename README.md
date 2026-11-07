@@ -34,6 +34,14 @@ The pack contains:
 The stock MiniMax-H3 forward has no input for HyperFlow's step endpoint `r`, so the stock `UNETLoader` cannot run
 these checkpoints on its own.
 
+## Example: reference to video
+
+Three references (a character, a scooter, a harbor square) into one shot, rendered with the ref2va INT8 file through this loader: 1344x768, 124 frames, 6 steps, seed 42. AI-generated.
+
+[![ref2va INT8 example](assets/ref2va_example.jpg)](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI/blob/main/examples/ref2va_int8_example.mp4)
+
+The clip, the three reference images and the full prompt are on the [model page](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI).
+
 ## Requirements
 
 - A ComfyUI build with native MiniMax-H3 support and the `int8_tensorwise` + `convrot` quantized ops (the
