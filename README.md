@@ -26,7 +26,7 @@ Video Rebirth publishes 99 s for the official `Q4_K_M` GGUF setup on an RTX 5090
 - **The converted INT8 checkpoints** on [Hugging Face](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI), ready for `ComfyUI/models/diffusion_models/`.
 - **Five ready-to-run workflows** in `example_workflows/`, also under **Workflow > Browse Templates**: text to video,
   text to video with sparse attention, first frame, first and last frame, and reference to video.
-- **The converter and CPU checks**, if you want to build the checkpoints yourself.
+
 
 ## Quick start
 
@@ -63,13 +63,14 @@ Prompts and reference images are on the [model page](https://huggingface.co/Benn
 
 ### ComfyUI-Manager and the Comfy registry
 
-<!-- TODO_REGISTRY: update this section once the pack is published to the Comfy registry. -->
-The pack is not in the Comfy registry yet. Once it is listed, install it from ComfyUI-Manager (search for
-`HyperFlow INT8`) or with:
+Install from ComfyUI-Manager (search for `HyperFlow INT8`) or with:
 
 ```sh
 comfy node install comfyui-hyperflow-int8-nodes
 ```
+
+Install the official [ComfyUI-HyperFlow-Flash](https://github.com/Video-Rebirth/ComfyUI-HyperFlow-Flash) pack the
+same way (`comfyui-hyperflow-flash`), then restart ComfyUI.
 
 ### git clone
 
@@ -99,8 +100,6 @@ hf download BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI minimax_h3_fl2va_hyperfl
   --local-dir ComfyUI/models/diffusion_models
 ```
 
-To build the files yourself instead, see [Convert the weights yourself](#convert-the-weights-yourself).
-
 ## Usage
 
 Open a template from **Workflow > Browse Templates**, under this pack's folder name (`comfyui_hyperflow_int8_nodes`
@@ -115,7 +114,8 @@ after a git clone). The templates are the official HyperFlow templates with the 
 | `hyperflow_int8_flf2v` | first and last frame to video | `fl2va` |
 | `hyperflow_int8_ref2v` | reference images to video | `ref2va` |
 
-API-format versions are in `example_workflows/api/`. Apart from the loader, the sampling settings match the official
+API-format versions are in the [model repo](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI/tree/main/workflows/api)
+under `workflows/api/`. Apart from the loader, the sampling settings match the official
 templates: `HyperFlow Sigmas` (4, 6 or 8 steps, 6 by default), `euler`, CFG 1, no negative prompt, 1344 x 768. The
 two text-to-video templates default to 243 frames (10.1 s at 24 fps); the others default to 124 frames (5.2 s).
 
@@ -152,12 +152,7 @@ rotated input, the same scheme as ComfyUI's native `int8_tensorwise` + `convrot`
 ComfyUI's MiniMax-H3 layout, copying the INT8 codes and scales bit for bit, and loads the result on ComfyUI's own
 INT8 kernels.
 
-The pack contains:
-
-- `HyperFlow INT8 Loader`, a ComfyUI node (`loader.py`);
-- `convert_hyperflow_int8.py`, the one-time converter;
-- `verify_cpu.py`, CPU-only checks of a converted file (in this GitHub repo only, not in the Registry package);
-- five workflow templates in `example_workflows/`.
+The pack is the `HyperFlow INT8 Loader` node (`loader.py`) and five workflow templates in `example_workflows/`.
 
 | Piece | Source |
 |---|---|
@@ -165,7 +160,7 @@ The pack contains:
 | Low-rank linears, split q/k/v, SwiGLU MLP for low-rank blocks, two-time (t, r) embedder | Official `ComfyUI-HyperFlow-Flash/model_patch.py`, imported unchanged |
 | 4, 6 or 8-step schedule | Official `HyperFlow Sigmas` node |
 | `HyperFlow INT8 Loader` node | This pack (`loader.py`) |
-| One-time conversion | This pack (`convert_hyperflow_int8.py`) |
+| The converted checkpoints | [Hugging Face](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI), converted once from Video Rebirth's INT8 files |
 
 The stock MiniMax-H3 forward has no input for HyperFlow's step endpoint `r`, so the stock `UNETLoader` cannot run
 these checkpoints on its own.
@@ -183,66 +178,13 @@ The weights stay resident in VRAM:
 Per token, the block linears cost 11.6 G INT8 MACs plus 1.3 G (`fl2va`) or 1.5 G (`ref2va`) bf16 MACs. The stock
 50-block dense INT8 MiniMax-H3 costs 19.3 G INT8 MACs.
 
-## Convert the weights yourself
+### The checkpoints
 
-The converter needs only torch and safetensors. It runs on CPU, streams one tensor at a time, and takes about 20 s
-per variant from an SSD.
-
-```sh
-hf download VideoRebirthAI/hyperflow-h3-flash --include "fl2va_int8_convrot/*" "ref2va_int8_convrot/*" --local-dir hyperflow
-
-python convert_hyperflow_int8.py hyperflow/fl2va_int8_convrot \
-  ComfyUI/models/diffusion_models/minimax_h3_fl2va_hyperflow_flash_int8_convrot.safetensors
-python convert_hyperflow_int8.py hyperflow/ref2va_int8_convrot \
-  ComfyUI/models/diffusion_models/minimax_h3_ref2va_hyperflow_flash_int8_convrot.safetensors
-```
-
-Options:
-
-- `--rank-multiple N` zero-pads the low-rank ranks. The default is 8, the HyperFlow runtime's default; 64 is also
-  exact.
-- `--source-revision SHA` records the source commit in the file's modification notice.
-- `--variant` and `--overwrite`.
-
-What the conversion does:
-
-- **Names:** renames tensors to ComfyUI's MiniMax-H3 names, the same names as the official GGUF.
-- **Dropped blocks:** leaves them out and renumbers the kept blocks (47 of 50 for `fl2va`, 49 of 50 for `ref2va`).
-- **q/k/v:** fuses all-INT8 `to_q/k/v` into `attn.qkv_proj`. This is exact, because the scales are per output row
-  and the input rotation is shared.
-- **fc1:** swaps the halves of `ff.net.0.proj` (value | gate) to ComfyUI's `mlp.fc1` order (gate | value).
-- **Low-rank factors:** keeps them in bf16.
-- **Schedule:** stores HyperFlow's gate and 6-step sigmas.
-
-Each output file's metadata carries the MiniMax notice and a statement that the file was modified.
-
-### Verification
-
-`verify_cpu.py` checks a converted file on CPU only, with CUDA hidden. It ships in this GitHub repo but not in the
-Comfy Registry package, so clone the repo to use it. Run it from the ComfyUI folder with ComfyUI's python:
-
-```sh
-python custom_nodes/comfyui_hyperflow_int8_nodes/verify_cpu.py exact  OUT.safetensors SRC_DIR path/to/hyperflow_h3_flash_int8.py
-python custom_nodes/comfyui_hyperflow_int8_nodes/verify_cpu.py layout OUT.safetensors SRC_DIR official-Q8_0.gguf
-python custom_nodes/comfyui_hyperflow_int8_nodes/verify_cpu.py remote OUT.safetensors VideoRebirthAI/hyperflow-h3-flash ref2va_gguf/minimax_h3_ref2va_hyperflow_flash_14b-Q8_0.gguf
-python custom_nodes/comfyui_hyperflow_int8_nodes/verify_cpu.py loader OUT.safetensors SRC_DIR path/to/hyperflow_h3_flash_int8.py mini.safetensors
-python custom_nodes/comfyui_hyperflow_int8_nodes/verify_cpu.py import
-```
-
-| Mode | Checks |
-|---|---|
-| `exact` | INT8 codes and scales against the source; dequantized weights against HyperFlow's `int8.py`; forward bit-identity with `Int8RotLinear` using the reference's activation arithmetic; low-rank pairs |
-| `layout` | Every tensor against the official HyperFlow GGUF: unquantized tensors bit-exact, linears by correlation |
-| `remote` | Compares against the official GGUF on Hugging Face, reading only its header and a few MB of byte ranges |
-| `loader` | Loads a slice of up to 4 blocks through the real loader; checks module forwards against the reference math, the two-time embedding and a smoke forward |
-| `import` | Loads both packs through ComfyUI's custom-node loader |
-
-Both variants pass:
-
-- **exact:** all 120 INT8 modules are bit-identical, and the dequantization error is 0. The 102 (`fl2va`) and 114
-  (`ref2va`) low-rank pairs are bit-identical.
-- **layout:** all 315 unquantized `fl2va` tensors and all 234 checked `ref2va` tensors are bit-exact against the
-  official Q8_0 GGUF. The lowest linear correlation is 0.99991 for `fl2va` and 0.99993 for `ref2va`.
+The files on Hugging Face are Video Rebirth's own INT8 checkpoints in ComfyUI's layout. The INT8 codes and scales
+are copied bit for bit, so nothing is requantized: tensors are renamed, the dropped blocks are left out, q/k/v are
+fused and the low-rank factors stay bf16. Every INT8 module and low-rank pair is bit-identical to the source, and
+every unquantized tensor is bit-exact against the official Q8_0 GGUF; the
+[model page](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI#receipts) has the full receipts.
 
 ## Credits
 

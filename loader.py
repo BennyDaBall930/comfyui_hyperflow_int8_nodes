@@ -160,7 +160,10 @@ def load_hyperflow_int8(path: str, patcher: str = "legacy"):
     patch, loader_nodes = official()
     sd, metadata = comfy.utils.load_torch_file(path, return_metadata=True)
     if "hyperflow_gate" not in sd:
-        raise ValueError(f"{path} is not a HyperFlow INT8 conversion (run convert_hyperflow_int8.py first)")
+        raise ValueError(
+            f"{path} is not a HyperFlow INT8 checkpoint for ComfyUI. Use the files from "
+            "https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI"
+        )
     try:
         variant = json.loads((metadata or {}).get("hyperflow_int8", "{}")).get("variant", "unknown")
     except ValueError:
@@ -227,8 +230,9 @@ class HyperFlowINT8Loader:
     RETURN_TYPES = ("MODEL",)
     FUNCTION = "load"
     DESCRIPTION = (
-        "Loads a HyperFlow H3 Flash INT8 checkpoint (fl2va or ref2va) converted by convert_hyperflow_int8.py. INT8 "
-        "linears run on ComfyUI's native int8_tensorwise + convrot ops. Use with HyperFlow Sigmas, euler, cfg 1."
+        "Loads a HyperFlow H3 Flash INT8 checkpoint (fl2va or ref2va) from "
+        "BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI on Hugging Face. INT8 linears run on ComfyUI's native "
+        "int8_tensorwise + convrot ops. Use with HyperFlow Sigmas, euler, cfg 1."
     )
 
     @classmethod

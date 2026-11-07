@@ -1,6 +1,6 @@
 [project]
 name = "comfyui-hyperflow-int8-nodes"
-version = "0.1.1"
+version = "0.1.2"
 description = "Unofficial: run HyperFlow H3 Flash's own INT8 (convrot) checkpoints, fl2va and ref2va, on ComfyUI's native INT8 kernels. Needs the official ComfyUI-HyperFlow-Flash pack."
 readme = "README.md"
 license = { file = "LICENSE" }
