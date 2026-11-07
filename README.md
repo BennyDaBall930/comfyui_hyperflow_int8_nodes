@@ -2,45 +2,53 @@
 
 # comfyui_hyperflow_int8_nodes
 
-An unofficial ComfyUI loader for the INT8 checkpoints of HyperFlow H3 Flash. It runs both variants, `fl2va`
-(text, first frame, or first and last frame to video) and `ref2va` (reference images to video), on ComfyUI's
-native INT8 `convrot` kernels, with no GGUF and no dequantizing to bf16.
+Run [HyperFlow H3 Flash](https://huggingface.co/VideoRebirthAI/hyperflow-h3-flash) in ComfyUI on ComfyUI's own INT8
+kernels: text, image and reference to video with synchronized stereo audio, in 6 steps. Weights:
+[BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI).
 
-This project is not affiliated with Video Rebirth, MiniMax or Comfy Org.
+## Speed
 
-## What it is
+One RTX 5090, 1344 x 768, 124 frames (5.2 s) with audio, 6 steps, mean of 5 seeds, queue to saved MP4:
 
-HyperFlow H3 Flash ships its own INT8 transformers (`fl2va_int8_convrot/` and `ref2va_int8_convrot/` in
-[VideoRebirthAI/hyperflow-h3-flash](https://huggingface.co/VideoRebirthAI/hyperflow-h3-flash)). They are W8A8 with a
-rotated input, the same scheme as ComfyUI's native `int8_tensorwise` + `convrot`. This pack converts them once to
-ComfyUI's MiniMax-H3 layout, copying the INT8 codes and scales bit for bit, and loads the result on ComfyUI's own
-INT8 kernels.
+| Setup | Time per clip | vs stock H3 |
+|---|---:|---:|
+| **This pack + the INT8 checkpoints** | **46.1 s** | **3.0x faster** |
+| This pack + ComfyUI's *Model Sparse Attention* node | about 38 s | 3.7x faster |
+| Official HyperFlow `Q4_K_M` GGUF + official nodes | 66.0 s | 2.1x faster |
+| Stock MiniMax H3, 20 steps | 139.1 s | 1x |
 
-The pack contains:
+Video Rebirth publishes 99 s for the official `Q4_K_M` GGUF setup on an RTX 5090. Peak VRAM with this pack was 24.2 GB.
 
-- `HyperFlow INT8 Loader`, a ComfyUI node (`loader.py`);
-- `convert_hyperflow_int8.py`, the one-time converter;
-- `verify_cpu.py`, CPU-only checks of a converted file;
-- five workflow templates in `example_workflows/`.
+## What you get
 
-| Piece | Source |
-|---|---|
-| Model detection, MiniMax-H3 blocks, INT8 weight loading and GEMMs, attention, sampler | ComfyUI core, unchanged |
-| Low-rank linears, split q/k/v, SwiGLU MLP for low-rank blocks, two-time (t, r) embedder | Official `ComfyUI-HyperFlow-Flash/model_patch.py`, imported unchanged |
-| 4, 6 or 8-step schedule | Official `HyperFlow Sigmas` node |
-| `HyperFlow INT8 Loader` node | This pack (`loader.py`) |
-| One-time conversion | This pack (`convert_hyperflow_int8.py`) |
+- **HyperFlow INT8 Loader**, a ComfyUI node that runs both HyperFlow checkpoints: `fl2va` (text, first frame, first
+  and last frame) and `ref2va` (reference images).
+- **The converted INT8 checkpoints** on [Hugging Face](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI), ready for `ComfyUI/models/diffusion_models/`.
+- **Five ready-to-run workflows** in `example_workflows/`, also under **Workflow > Browse Templates**: text to video,
+  text to video with sparse attention, first frame, first and last frame, and reference to video.
+- **The converter and CPU checks**, if you want to build the checkpoints yourself.
 
-The stock MiniMax-H3 forward has no input for HyperFlow's step endpoint `r`, so the stock `UNETLoader` cannot run
-these checkpoints on its own.
+## Quick start
 
-## Example: reference to video
+1. Install this pack and the official [ComfyUI-HyperFlow-Flash](https://github.com/Video-Rebirth/ComfyUI-HyperFlow-Flash)
+   pack (see [Install](#install)).
+2. Download a checkpoint from [Hugging Face](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI) plus the text encoder and VAEs from
+   [Comfy-Org/MiniMax-H3](https://huggingface.co/Comfy-Org/MiniMax-H3) (see [Model files](#model-files)).
+3. Open a template from **Workflow > Browse Templates** and queue it.
 
-Three references (a character, a scooter, a harbor square) into one shot, rendered with the ref2va INT8 file through this loader: 1344x768, 124 frames, 6 steps, seed 42. AI-generated.
+## Examples
+
+AI-generated with this pack and the INT8 checkpoints, one run each, seed 42. Click for the video on Hugging Face.
+
+### Text to video (`fl2va`, 10 s)
+
+[![text to video INT8 example](assets/t2v_example.jpg)](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI/blob/main/examples/t2v_int8_example.mp4)
+
+### Reference to video (`ref2va`): a character, a scooter and a harbor square into one shot
 
 [![ref2va INT8 example](assets/ref2va_example.jpg)](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI/blob/main/examples/ref2va_int8_example.mp4)
 
-The clip, the three reference images and the full prompt are on the [model page](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI).
+Prompts and reference images are on the [model page](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI).
 
 ## Requirements
 
@@ -136,15 +144,31 @@ To switch an existing API-format graph to this loader, replace its model loader 
 method `sol-attn`, tau 1.25, start_percent 0.39, end_percent 1.0, dense blocks `0, 1, 45, 46`. Bypass the node
 (Ctrl+B) to run dense attention.
 
-## Performance
+## How it works
 
-RTX 5090, 1344 x 768, 124 frames, 6 steps, 5 seeds per setup:
+HyperFlow H3 Flash ships its own INT8 transformers (`fl2va_int8_convrot/` and `ref2va_int8_convrot/` in
+[VideoRebirthAI/hyperflow-h3-flash](https://huggingface.co/VideoRebirthAI/hyperflow-h3-flash)). They are W8A8 with a
+rotated input, the same scheme as ComfyUI's native `int8_tensorwise` + `convrot`. This pack converts them once to
+ComfyUI's MiniMax-H3 layout, copying the INT8 codes and scales bit for bit, and loads the result on ComfyUI's own
+INT8 kernels.
 
-| Setup | Time per clip | Notes |
-|---|---:|---|
-| This pack, `patcher: legacy` | 46.1 s | about 5.4 s/it, 24.2 GB peak VRAM |
-| This pack with *Model Sparse Attention* (settings above) | about 38.1 s | `hyperflow_int8_t2v_sparse` |
-| Official HyperFlow `Q4_K_M` GGUF with the official nodes | 66.0 s | Video Rebirth publishes 99 s for this setup on an RTX 5090 |
+The pack contains:
+
+- `HyperFlow INT8 Loader`, a ComfyUI node (`loader.py`);
+- `convert_hyperflow_int8.py`, the one-time converter;
+- `verify_cpu.py`, CPU-only checks of a converted file;
+- five workflow templates in `example_workflows/`.
+
+| Piece | Source |
+|---|---|
+| Model detection, MiniMax-H3 blocks, INT8 weight loading and GEMMs, attention, sampler | ComfyUI core, unchanged |
+| Low-rank linears, split q/k/v, SwiGLU MLP for low-rank blocks, two-time (t, r) embedder | Official `ComfyUI-HyperFlow-Flash/model_patch.py`, imported unchanged |
+| 4, 6 or 8-step schedule | Official `HyperFlow Sigmas` node |
+| `HyperFlow INT8 Loader` node | This pack (`loader.py`) |
+| One-time conversion | This pack (`convert_hyperflow_int8.py`) |
+
+The stock MiniMax-H3 forward has no input for HyperFlow's step endpoint `r`, so the stock `UNETLoader` cannot run
+these checkpoints on its own.
 
 ### Memory
 
@@ -231,6 +255,8 @@ Both variants pass:
   [Comfy-Org/MiniMax-H3](https://huggingface.co/Comfy-Org/MiniMax-H3) text encoder and VAE files.
 
 ## License
+
+This project is not affiliated with Video Rebirth, MiniMax or Comfy Org.
 
 - **Code:** GPL-3.0 (see `LICENSE`), because it imports the GPL-3.0 ComfyUI-HyperFlow-Flash pack.
 - **Weights:** not included in this repository. HyperFlow H3 Flash and its conversions are Model Derivatives of
