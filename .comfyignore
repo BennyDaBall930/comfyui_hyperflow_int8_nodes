@@ -1,0 +1,4 @@
+# Left out of the Comfy Registry package (comfy node pack / publish). It stays in this GitHub repo.
+# verify_cpu.py is a developer check that hides CUDA via an environment variable before torch loads,
+# which the Registry security scan flags. Users of the node do not need it.
+verify_cpu.py

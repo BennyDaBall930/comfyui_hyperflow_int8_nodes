@@ -156,7 +156,7 @@ The pack contains:
 
 - `HyperFlow INT8 Loader`, a ComfyUI node (`loader.py`);
 - `convert_hyperflow_int8.py`, the one-time converter;
-- `verify_cpu.py`, CPU-only checks of a converted file;
+- `verify_cpu.py`, CPU-only checks of a converted file (in this GitHub repo only, not in the Registry package);
 - five workflow templates in `example_workflows/`.
 
 | Piece | Source |
@@ -218,8 +218,8 @@ Each output file's metadata carries the MiniMax notice and a statement that the 
 
 ### Verification
 
-`verify_cpu.py` checks a converted file on CPU only, with CUDA hidden. Run it from the ComfyUI folder with ComfyUI's
-python:
+`verify_cpu.py` checks a converted file on CPU only, with CUDA hidden. It ships in this GitHub repo but not in the
+Comfy Registry package, so clone the repo to use it. Run it from the ComfyUI folder with ComfyUI's python:
 
 ```sh
 python custom_nodes/comfyui_hyperflow_int8_nodes/verify_cpu.py exact  OUT.safetensors SRC_DIR path/to/hyperflow_h3_flash_int8.py
