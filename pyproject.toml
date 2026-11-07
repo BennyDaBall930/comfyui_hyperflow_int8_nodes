@@ -11,7 +11,7 @@ dependencies = ["gguf"]
 
 [project.urls]
 Repository = "https://github.com/BennyDaBall930/comfyui_hyperflow_int8_nodes"
-Weights = "https://huggingface.co/BennyDaBall/hyperflow-h3-flash_int8_ComfyUI"
+Weights = "https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash_INT8_ComfyUI"
 "Official HyperFlow pack" = "https://github.com/Video-Rebirth/ComfyUI-HyperFlow-Flash"
 
 [tool.comfy]
