@@ -44,6 +44,10 @@ AI-generated with this pack and the INT8 checkpoints, one run each, seed 42. Cli
 
 [![text to video INT8 example](assets/t2v_example.jpg)](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI/blob/main/examples/t2v_int8_example.mp4)
 
+### First frame to video (`fl2va`, 10 s): a night train full of passengers from different eras
+
+[![first frame to video INT8 example](assets/i2v_example.jpg)](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI/blob/main/examples/i2v_int8_example.mp4)
+
 ### Reference to video (`ref2va`): a character, a scooter and a harbor square into one shot
 
 [![ref2va INT8 example](assets/ref2va_example.jpg)](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI/blob/main/examples/ref2va_int8_example.mp4)
