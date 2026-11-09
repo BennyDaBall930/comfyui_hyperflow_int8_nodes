@@ -212,3 +212,7 @@ This project is not affiliated with Video Rebirth, MiniMax or Comfy Org.
   requires AI-generated content to be disclosed as such.
 
 Powered by MiniMax H3.
+
+**Follow me on X [@BennyDaBall_OG](https://x.com/BennyDaBall_OG) !**
+
+**Want to support my work? Buy me a coffee on [Ko-fi](https://ko-fi.com/bennydaball) !**
