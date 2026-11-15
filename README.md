@@ -23,7 +23,7 @@ Video Rebirth publishes 99 s for the official `Q4_K_M` GGUF setup on an RTX 5090
 
 - **HyperFlow INT8 Loader**, a ComfyUI node that runs both HyperFlow checkpoints: `fl2va` (text, first frame, first
   and last frame) and `ref2va` (reference images).
-- **The converted INT8 checkpoints** on [Hugging Face](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI), ready for `ComfyUI/models/diffusion_models/`.
+- **The INT8 checkpoints** on [Hugging Face](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI), ready for `ComfyUI/models/diffusion_models/`.
 - **HyperFlow LoRA**, a node that makes regular MiniMax H3 LoRAs work on HyperFlow H3 Flash models (see
   [LoRAs](#loras)).
 - **Six ready-to-run workflows** in `example_workflows/`, also under **Workflow > Browse Templates**: text to video,
@@ -182,9 +182,10 @@ lost. Chain several HyperFlow LoRA nodes for several LoRAs.
 
 HyperFlow H3 Flash ships its own INT8 transformers (`fl2va_int8_convrot/` and `ref2va_int8_convrot/` in
 [VideoRebirthAI/hyperflow-h3-flash](https://huggingface.co/VideoRebirthAI/hyperflow-h3-flash)). They are W8A8 with a
-rotated input, the same scheme as ComfyUI's native `int8_tensorwise` + `convrot`. This pack converts them once to
-ComfyUI's MiniMax-H3 layout, copying the INT8 codes and scales bit for bit, and loads the result on ComfyUI's own
-INT8 kernels.
+rotated input, the same scheme as ComfyUI's native `int8_tensorwise` + `convrot`. This pack loads files in ComfyUI's
+MiniMax-H3 layout with that scheme on ComfyUI's own INT8 kernels. The first release of the checkpoints copied Video
+Rebirth's INT8 codes and scales bit for bit. Since 2026-11-15 they carry my own lower-error INT8 solve, made from the
+BF16 release, in the same layout and format.
 
 The pack is the `HyperFlow INT8 Loader` node (`loader.py`), the `HyperFlow LoRA` node (`lora.py`) and six workflow
 templates in `example_workflows/`.
@@ -196,7 +197,7 @@ templates in `example_workflows/`.
 | 4, 6 or 8-step schedule | Official `HyperFlow Sigmas` node |
 | `HyperFlow INT8 Loader` node | This pack (`loader.py`) |
 | `HyperFlow LoRA` node | This pack (`lora.py`), on ComfyUI's bypass LoRA hook, unchanged |
-| The converted checkpoints | [Hugging Face](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI), converted once from Video Rebirth's INT8 files |
+| The checkpoints | [Hugging Face](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI): my own INT8 solve from Video Rebirth's BF16 release, in this layout |
 
 The stock MiniMax-H3 forward has no input for HyperFlow's step endpoint `r`, so the stock `UNETLoader` cannot run
 these checkpoints on its own.
@@ -216,11 +217,13 @@ Per token, the block linears cost 11.6 G INT8 MACs plus 1.3 G (`fl2va`) or 1.5 G
 
 ### The checkpoints
 
-The files on Hugging Face are Video Rebirth's own INT8 checkpoints in ComfyUI's layout. The INT8 codes and scales
-are copied bit for bit, so nothing is requantized: tensors are renamed, the dropped blocks are left out, q/k/v are
-fused and the low-rank factors stay bf16. Every INT8 module and low-rank pair is bit-identical to the source, and
-every unquantized tensor is bit-exact against the official Q8_0 GGUF; the
-[model page](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI#receipts) has the full receipts.
+The files on Hugging Face use Video Rebirth's INT8 layout carried to ComfyUI: tensors are renamed, the dropped
+blocks are left out, q/k/v are fused and the low-rank factors stay bf16. Since 2026-11-15 the INT8 codes and row
+scales of the 120 dense block matrices are my own solve from the BF16 release: closer to BF16 than the official INT8,
+at the same size and speed. Every low-rank pair is bit-identical to the source and every unquantized tensor is
+bit-exact against the official Q8_0 GGUF; the
+[model page](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI#receipts) has the numbers and the
+receipts. The loader and the workflows run the first release and the updated files alike.
 
 ## Credits
 
