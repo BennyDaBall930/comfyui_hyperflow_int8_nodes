@@ -225,6 +225,9 @@ bit-exact against the official Q8_0 GGUF; the
 [model page](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI#receipts) has the numbers and the
 receipts. The loader and the workflows run the first release and the updated files alike.
 
+The updated files also carry the official `hyperflow` header entry, so the official **HyperFlow Loader** reads them
+too, with output identical to this pack's loader.
+
 ## Credits
 
 - [Video Rebirth](https://huggingface.co/VideoRebirthAI) for HyperFlow H3 Flash, its INT8 checkpoints and the
