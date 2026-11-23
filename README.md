@@ -26,9 +26,11 @@ Video Rebirth publishes 99 s for the official `Q4_K_M` GGUF setup on an RTX 5090
 - **The INT8 checkpoints** on [Hugging Face](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI), ready for `ComfyUI/models/diffusion_models/`.
 - **HyperFlow LoRA**, a node that makes regular MiniMax H3 LoRAs work on HyperFlow H3 Flash models (see
   [LoRAs](#loras)).
-- **Six ready-to-run workflows** in `example_workflows/`, also under **Workflow > Browse Templates**: text to video,
-  text to video with sparse attention, text to video with a LoRA, first frame, first and last frame, and reference
-  to video.
+- **pi-H3 Adapter for HyperFlow**, a node that runs [pi-H3](https://huggingface.co/Lakonik/pi-H3)'s 2-step and 4-step
+  adapters on HyperFlow H3 Flash (see [pi-H3 on HyperFlow](#pi-h3-on-hyperflow)).
+- **Nine ready-to-run workflows** in `example_workflows/`, also under **Workflow > Browse Templates**: text to video,
+  text to video with sparse attention, text to video with a LoRA, first frame, first and last frame, reference
+  to video, and pi-H3 on HyperFlow at 2 steps, 4 steps and 480p max speed.
 
 
 ## Quick start
@@ -178,6 +180,60 @@ gives it. Tested with INT8 safetensors files of both variants and an NVFP4 file;
 for the full model is not guaranteed to look the same on the distilled one, and the dropped blocks' share of it is
 lost. Chain several HyperFlow LoRA nodes for several LoRAs.
 
+### pi-H3 on HyperFlow
+
+[pi-H3](https://huggingface.co/Lakonik/pi-H3) (Lakonik, pi-Flow v2) makes MiniMax H3 video with audio in 2 or 4 steps,
+and its DWD adapters skip the VAE decode. A pi-H3 adapter is more than a LoRA: next to rank-64 LoRA pairs it replaces
+every block's time modulation and the final layer, and the DWD adapters also replace the last four blocks and add a
+pixel head. All of that expects stock H3's time embedding and all 50 blocks, so **Load LakonLab Adapter** cannot put it
+on a HyperFlow model.
+
+**pi-H3 Adapter for HyperFlow** (`PiH3HyperFlowAdapter`) goes where Load LakonLab Adapter sits in the pi-H3 workflows,
+after the official **HyperFlow Loader**:
+
+- It renumbers the adapter's LoRA past the blocks HyperFlow drops and adds it at run time, low-rank layers included
+  (the HyperFlow LoRA node's remap and hooks).
+- It installs pi-H3's time modulation on stock H3's time curve. The curve table and the few biases the adapter leaves
+  out are read from the stock `minimax_h3_fl2va_pruned_int8_convrot.safetensors` (a few MB; the stock weights are not
+  loaded).
+- It installs pi-H3's final layer, the DWD adapter's four replaced blocks (HyperFlow blocks 43 to 46) and the DWD pixel
+  head, so ComfyUI-piFlow's **DWD Decode** works unchanged.
+- Spark-H3 accepts the model too.
+
+| Input | Values | Notes |
+|---|---|---|
+| `adapter_name` | `pi_h3_2step_dwd_adapter_int8_convrot.safetensors` and the other pi-H3 adapters | in `ComfyUI/models/loras/` |
+| `adapter_strength` | 1.0 | scales the LoRA part |
+| `time_path` | **pi-H3 (stock H3 time curve)**, or HyperFlow blocks + pi-H3 head | keep the default: the HyperFlow option gave a loud noise bed and clipping on a quiet dialogue scene |
+| `stock_base` | `minimax_h3_fl2va_pruned_int8_convrot.safetensors` | only its time table and biases are read |
+| `lora_mode` | **bypass**, or merge into dense layers | merge is about 0.7s faster but re-quantizes the dense layers, which on the NVFP4 file throws away its calibrated scales |
+| `dropped_blocks` | `auto` | as on the LoRA node |
+
+My numbers, one RTX 5090, 5s with audio, Spark-Attn, warm, the HyperFlow H3 Flash
+[NVFP4 file](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-NVFP4-ComfyUI) against the author's own workflow on
+the stock INT8 base:
+
+| Setup | 1344 x 768, 2 steps | 1344 x 768, 4 steps | 864 x 480, 2 steps, NVENC save | 864 x 480, new prompt | Peak VRAM |
+|---|---:|---:|---:|---:|---:|
+| **pi-H3 on HyperFlow NVFP4** | **12.7s** | **20.2s** | **4.6s** | **5.5s** | 24 to 28 GB |
+| pi-H3, author's workflow, stock H3 INT8 | 13.3 to 13.9s | 22.0s | 4.8s | 8 to 14s | 29 to 31 GB |
+
+At 480p the gain is mostly memory: the NVFP4 model and the text encoder fit in VRAM together, so a new prompt costs
+only its text encode. On the stock base the text encoder pushes part of the model out, and the first clip or two after
+a new prompt run slower.
+
+The workflows `hyperflow_pih3_t2v_2step`, `hyperflow_pih3_t2v_4step` and `hyperflow_pih3_t2v_480p_max_speed` need
+[ComfyUI-piFlow](https://github.com/Lakonik/ComfyUI-piFlow) 1.4.2 or newer,
+[Spark-H3](https://github.com/zechengtang/Spark-H3) 0.2.0, the pi-H3 adapters from
+[Lakonik/pi-H3](https://huggingface.co/Lakonik/pi-H3), and for the 480p one
+[ComfyUI-VideoHelperSuite](https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite) (NVENC save; the clip with sound
+is the `-audio.mp4` file).
+
+Picture quality holds up, and pi-H3's own look carries over. The spoken lines come out less reliably than on the
+stock base: Whisper heard the scripted line word for word in 4 of 9 HyperFlow clips against 6 of 6 stock clips at
+1344 x 768, and 5 of 8 against 8 of 8 at 480p. HyperFlow H3 Flash on its own showed the same "Careful" to "Carful"
+slip. Its audio also comes out louder than stock pi-H3's on quiet scenes.
+
 ## How it works
 
 HyperFlow H3 Flash ships its own INT8 transformers (`fl2va_int8_convrot/` and `ref2va_int8_convrot/` in
@@ -187,8 +243,8 @@ MiniMax-H3 layout with that scheme on ComfyUI's own INT8 kernels. The first rele
 Rebirth's INT8 codes and scales bit for bit. Since 2026-11-15 they carry my own lower-error INT8 solve, made from the
 BF16 release, in the same layout and format.
 
-The pack is the `HyperFlow INT8 Loader` node (`loader.py`), the `HyperFlow LoRA` node (`lora.py`) and six workflow
-templates in `example_workflows/`.
+The pack is the `HyperFlow INT8 Loader` node (`loader.py`), the `HyperFlow LoRA` node (`lora.py`), the
+`pi-H3 Adapter for HyperFlow` node (`pih3.py`) and nine workflow templates in `example_workflows/`.
 
 | Piece | Source |
 |---|---|
@@ -197,6 +253,7 @@ templates in `example_workflows/`.
 | 4, 6 or 8-step schedule | Official `HyperFlow Sigmas` node |
 | `HyperFlow INT8 Loader` node | This pack (`loader.py`) |
 | `HyperFlow LoRA` node | This pack (`lora.py`), on ComfyUI's bypass LoRA hook, unchanged |
+| `pi-H3 Adapter for HyperFlow` node | This pack (`pih3.py`); the DWD head and its sampling wrapper are ComfyUI-piFlow's, imported at run time |
 | The checkpoints | [Hugging Face](https://huggingface.co/BennyDaBall/HyperFlow-H3-Flash-INT8-ComfyUI): my own INT8 solve from Video Rebirth's BF16 release, in this layout |
 
 The stock MiniMax-H3 forward has no input for HyperFlow's step endpoint `r`, so the stock `UNETLoader` cannot run
@@ -234,6 +291,9 @@ too, with output identical to this pack's loader.
   official [ComfyUI-HyperFlow-Flash](https://github.com/Video-Rebirth/ComfyUI-HyperFlow-Flash) pack, whose
   `model_patch.py` this pack imports.
 - [MiniMax](https://huggingface.co/MiniMaxAI) for MiniMax H3, the base model.
+- [Hansheng Chen (Lakonik)](https://huggingface.co/Lakonik) for pi-H3 and
+  [ComfyUI-piFlow](https://github.com/Lakonik/ComfyUI-piFlow) (Apache-2.0): the pi-H3 node imports its DWD head, two
+  small helpers are adapted from it, and the pi-H3 workflows build on its own.
 - [ComfyUI](https://github.com/Comfy-Org/ComfyUI) and Comfy Org for native MiniMax-H3 support, the INT8
   `convrot` ops and kernels, the *Model Sparse Attention* node, and the
   [Comfy-Org/MiniMax-H3](https://huggingface.co/Comfy-Org/MiniMax-H3) text encoder and VAE files.

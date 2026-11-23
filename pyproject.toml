@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-hyperflow-int8-nodes"
-version = "0.1.4"
-description = "Unofficial: run HyperFlow H3 Flash's own INT8 (convrot) checkpoints, fl2va and ref2va, on ComfyUI's native INT8 kernels, and use regular MiniMax H3 LoRAs on them. Needs the official ComfyUI-HyperFlow-Flash pack."
+version = "0.2.0"
+description = "Unofficial: run HyperFlow H3 Flash's own INT8 (convrot) checkpoints, fl2va and ref2va, on ComfyUI's native INT8 kernels, use regular MiniMax H3 LoRAs on them, and run pi-H3's 2-step and 4-step adapters on HyperFlow H3 Flash. Needs the official ComfyUI-HyperFlow-Flash pack (and ComfyUI-piFlow for pi-H3)."
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
